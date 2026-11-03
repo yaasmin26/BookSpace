@@ -1,0 +1,19 @@
+# Environment files
+.env
+
+# Composer dependencies
+/vendor/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+
