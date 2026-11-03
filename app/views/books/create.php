@@ -67,6 +67,36 @@
                         Manajemen Anggota
                     </a>
                 </li>
+                <li class="nav-item-dropdown">
+                    <a href="index.php?url=loans" class="nav-link">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                            <path d="M9 14l2 2 4-4"></path>
+                        </svg>
+                        Transaksi
+                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </a>
+                    <div class="dropdown-menu">
+                        <a href="index.php?url=loans/create" class="dropdown-item">
+                            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            Peminjaman Buku
+                        </a>
+                        <a href="index.php?url=loans" class="dropdown-item">
+                            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                            Pengembalian Buku (Daftar Transaksi)
+                        </a>
+                    </div>
+                </li>
             </ul>
 
             <!-- Profil Admin & Tombol Logout -->
@@ -341,6 +371,8 @@
         &copy; <?= date('Y') ?> BookSpace – Library Management System. Hak Cipta Dilindungi.
     </footer>
 
+    <!-- Shared Interactions JS -->
+    <script src="js/app.js"></script>
 </body>
 </html>
 

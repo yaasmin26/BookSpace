@@ -5,6 +5,7 @@ require_once __DIR__ . '/../app/controllers/DashboardController.php';
 require_once __DIR__ . '/../app/controllers/BookController.php';
 require_once __DIR__ . '/../app/controllers/CategoryController.php';
 require_once __DIR__ . '/../app/controllers/MemberController.php';
+require_once __DIR__ . '/../app/controllers/LoanController.php';
 
 /**
  * Mengurai dan mendapatkan URI path yang diminta
@@ -365,6 +366,81 @@ switch ($requestUri) {
         }
         if ($requestMethod === 'POST') {
             (new MemberController())->update();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // ===============================================
+    // Rute Sirkulasi Peminjaman (Tanggung Jawab Anggota 3)
+    // ===============================================
+    // Route: GET /loans (Daftar Transaksi Peminjaman)
+    case '/loans':
+        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
+            header('Location: index.php?url=login');
+            exit;
+        }
+        if ($requestMethod === 'GET') {
+            (new LoanController())->index();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: GET /loans/create & POST /loans/create (Form & Simpan Peminjaman)
+    case '/loans/create':
+        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
+            header('Location: index.php?url=login');
+            exit;
+        }
+        if ($requestMethod === 'GET') {
+            (new LoanController())->create();
+        } elseif ($requestMethod === 'POST') {
+            (new LoanController())->store();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: POST /loans/store (Simpan Peminjaman)
+    case '/loans/store':
+        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
+            header('Location: index.php?url=login');
+            exit;
+        }
+        if ($requestMethod === 'POST') {
+            (new LoanController())->store();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: GET /loans/detail (Detail Transaksi)
+    case '/loans/detail':
+        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
+            header('Location: index.php?url=login');
+            exit;
+        }
+        if ($requestMethod === 'GET') {
+            (new LoanController())->detail();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: POST /loans/return (Proses Pengembalian Buku)
+    case '/loans/return':
+        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
+            header('Location: index.php?url=login');
+            exit;
+        }
+        if ($requestMethod === 'POST') {
+            (new LoanController())->returnBook();
         } else {
             http_response_code(405);
             echo "405 Method Not Allowed";
