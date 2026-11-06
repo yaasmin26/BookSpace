@@ -6,6 +6,7 @@ require_once __DIR__ . '/../app/controllers/BookController.php';
 require_once __DIR__ . '/../app/controllers/CategoryController.php';
 require_once __DIR__ . '/../app/controllers/MemberController.php';
 require_once __DIR__ . '/../app/controllers/LoanController.php';
+require_once __DIR__ . '/../app/controllers/ReturnController.php';
 
 /**
  * Mengurai dan mendapatkan URI path yang diminta
@@ -13,35 +14,37 @@ require_once __DIR__ . '/../app/controllers/LoanController.php';
  *
  * @return string
  */
-function resolveRequestUri(): string
-{
-    // 1. Dukungan query string ?url=... (Standar XAMPP bawaan tanpa mod_rewrite)
-    if (isset($_GET['url'])) {
-        $path = '/' . trim($_GET['url'], '/');
-        return $path === '/' ? '/' : rtrim($path, '/');
-    }
-
-    // 2. Dukungan PATH_INFO (misal: index.php/login)
-    if (!empty($_SERVER['PATH_INFO'])) {
-        $path = '/' . trim($_SERVER['PATH_INFO'], '/');
-        return $path === '/' ? '/' : rtrim($path, '/');
-    }
-
-    // 3. Dukungan REQUEST_URI (Clean URL / mod_rewrite aktif)
-    if (!empty($_SERVER['REQUEST_URI'])) {
-        $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $scriptDir  = dirname($_SERVER['SCRIPT_NAME'] ?? '');
-
-        if ($scriptDir !== '/' && $scriptDir !== '\\' && strpos($requestUri, $scriptDir) === 0) {
-            $requestUri = substr($requestUri, strlen($scriptDir));
+if (!function_exists('resolveRequestUri')) {
+    function resolveRequestUri(): string
+    {
+        // 1. Dukungan query string ?url=... (Standar XAMPP bawaan tanpa mod_rewrite)
+        if (isset($_GET['url'])) {
+            $path = '/' . trim($_GET['url'], '/');
+            return $path === '/' ? '/' : rtrim($path, '/');
         }
 
-        $requestUri = preg_replace('#^/index\.php#i', '', $requestUri);
-        $path = '/' . trim($requestUri, '/');
-        return $path === '/' ? '/' : rtrim($path, '/');
-    }
+        // 2. Dukungan PATH_INFO (misal: index.php/login)
+        if (!empty($_SERVER['PATH_INFO'])) {
+            $path = '/' . trim($_SERVER['PATH_INFO'], '/');
+            return $path === '/' ? '/' : rtrim($path, '/');
+        }
 
-    return '/';
+        // 3. Dukungan REQUEST_URI (Clean URL / mod_rewrite aktif)
+        if (!empty($_SERVER['REQUEST_URI'])) {
+            $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+            $scriptDir  = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+
+            if ($scriptDir !== '/' && $scriptDir !== '\\' && strpos($requestUri, $scriptDir) === 0) {
+                $requestUri = substr($requestUri, strlen($scriptDir));
+            }
+
+            $requestUri = preg_replace('#^/index\.php#i', '', $requestUri);
+            $path = '/' . trim($requestUri, '/');
+            return $path === '/' ? '/' : rtrim($path, '/');
+        }
+
+        return '/';
+    }
 }
 
 $requestUri = resolveRequestUri();
@@ -441,6 +444,39 @@ switch ($requestUri) {
         }
         if ($requestMethod === 'POST') {
             (new LoanController())->returnBook();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // ===============================================
+    // Rute Layanan Pengembalian Buku
+    // ===============================================
+    // Route: GET /returns & POST /returns
+    case '/returns':
+        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
+            header('Location: index.php?url=login');
+            exit;
+        }
+        if ($requestMethod === 'GET') {
+            (new ReturnController())->index();
+        } elseif ($requestMethod === 'POST') {
+            (new ReturnController())->process();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: POST /returns/process
+    case '/returns/process':
+        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
+            header('Location: index.php?url=login');
+            exit;
+        }
+        if ($requestMethod === 'POST') {
+            (new ReturnController())->process();
         } else {
             http_response_code(405);
             echo "405 Method Not Allowed";

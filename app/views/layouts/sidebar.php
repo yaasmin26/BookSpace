@@ -1,4 +1,3 @@
-```php
 <?php
 /**
  * ========================================================
@@ -30,6 +29,8 @@ if (!isset($activeMenu)) {
             $currentRoute = 'categories';
         } elseif (strpos($uriPath, 'members') !== false) {
             $currentRoute = 'members';
+        } elseif (strpos($uriPath, 'returns') !== false) {
+            $currentRoute = 'returns';
         } elseif (strpos($uriPath, 'loans') !== false) {
             $currentRoute = 'loans';
         } else {
@@ -45,16 +46,14 @@ if (!isset($activeMenu)) {
         $activeMenu = 'categories';
     } elseif (strpos($currentRoute, 'members') === 0) {
         $activeMenu = 'members';
+    } elseif (strpos($currentRoute, 'returns') === 0) {
+        $activeMenu = 'returns';
     } elseif (strpos($currentRoute, 'loans') === 0) {
         $activeMenu = 'loans';
     } else {
         $activeMenu = 'dashboard';
     }
 }
-
-$isReturnMenu = $activeMenu === 'loans'
-    && ($_GET['status'] ?? '') === 'returned';
-
 ?>
 
 <!-- Mobile Sidebar Backdrop Overlay -->
@@ -108,11 +107,9 @@ $isReturnMenu = $activeMenu === 'loans'
 
             <!-- Dashboard -->
             <li class="sidebar-nav-item">
-                <a href="index.php?url=dashboard"
-                    class="sidebar-nav-link <?= ($activeMenu === 'dashboard') ? 'active' : '' ?>">
+                <a href="index.php?url=dashboard" class="sidebar-nav-link <?= ($activeMenu === 'dashboard') ? 'active' : '' ?>">
                     <span class="nav-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18"
-                            stroke="currentColor" stroke-width="2" fill="none">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
                             <rect x="14" y="14" width="7" height="7"></rect>
@@ -125,11 +122,9 @@ $isReturnMenu = $activeMenu === 'loans'
 
             <!-- Manajemen Buku -->
             <li class="sidebar-nav-item">
-                <a href="index.php?url=books"
-                    class="sidebar-nav-link <?= ($activeMenu === 'books') ? 'active' : '' ?>">
+                <a href="index.php?url=books" class="sidebar-nav-link <?= ($activeMenu === 'books') ? 'active' : '' ?>">
                     <span class="nav-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18"
-                            stroke="currentColor" stroke-width="2" fill="none">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
                             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                         </svg>
@@ -140,11 +135,9 @@ $isReturnMenu = $activeMenu === 'loans'
 
             <!-- Manajemen Kategori -->
             <li class="sidebar-nav-item">
-                <a href="index.php?url=categories"
-                    class="sidebar-nav-link <?= ($activeMenu === 'categories') ? 'active' : '' ?>">
+                <a href="index.php?url=categories" class="sidebar-nav-link <?= ($activeMenu === 'categories') ? 'active' : '' ?>">
                     <span class="nav-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18"
-                            stroke="currentColor" stroke-width="2" fill="none">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                         </svg>
@@ -155,11 +148,9 @@ $isReturnMenu = $activeMenu === 'loans'
 
             <!-- Manajemen Anggota -->
             <li class="sidebar-nav-item">
-                <a href="index.php?url=members"
-                    class="sidebar-nav-link <?= ($activeMenu === 'members') ? 'active' : '' ?>">
+                <a href="index.php?url=members" class="sidebar-nav-link <?= ($activeMenu === 'members') ? 'active' : '' ?>">
                     <span class="nav-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18"
-                            stroke="currentColor" stroke-width="2" fill="none">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -179,12 +170,9 @@ $isReturnMenu = $activeMenu === 'loans'
 
             <!-- Peminjaman -->
             <li class="sidebar-nav-item">
-                <a href="index.php?url=loans"
-                    class="sidebar-nav-link <?= ($activeMenu === 'loans' && !$isReturnMenu) ? 'active' : '' ?>">
+                <a href="index.php?url=loans" class="sidebar-nav-link <?= ($activeMenu === 'loans') ? 'active' : '' ?>">
                     <span class="nav-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18"
-                            stroke="currentColor" stroke-width="2" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
                             <rect x="9" y="3" width="6" height="4" rx="2"></rect>
                             <path d="M9 14l2 2 4-4"></path>
@@ -196,12 +184,9 @@ $isReturnMenu = $activeMenu === 'loans'
 
             <!-- Pengembalian -->
             <li class="sidebar-nav-item">
-                <a href="index.php?url=loans&status=returned"
-                    class="sidebar-nav-link <?= $isReturnMenu ? 'active' : '' ?>">
+                <a href="index.php?url=returns" class="sidebar-nav-link <?= ($activeMenu === 'returns') ? 'active' : '' ?>">
                     <span class="nav-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18"
-                            stroke="currentColor" stroke-width="2" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="1 4 1 10 7 10"></polyline>
                             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                         </svg>
@@ -282,4 +267,3 @@ $isReturnMenu = $activeMenu === 'loans'
     }
 })();
 </script>
-```
