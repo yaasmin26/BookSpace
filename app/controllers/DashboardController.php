@@ -20,9 +20,15 @@ class DashboardController
             session_start();
         }
 
-        // 1. Proteksi route: Hanya pengguna terautentikasi yang dapat mengakses dashboard
+        // 1. Proteksi route: Hanya pengguna terautentikasi dengan role admin yang dapat mengakses dashboard admin
         if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
             header('Location: index.php?url=login');
+            exit;
+        }
+
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $_SESSION['flash_error'] = 'Akses ditolak: Anda tidak memiliki izin untuk mengakses halaman admin.';
+            header('Location: index.php?url=user/dashboard');
             exit;
         }
 

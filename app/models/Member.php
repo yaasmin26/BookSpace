@@ -297,5 +297,81 @@ class Member
             return 'MBR-' . strtoupper(substr(uniqid(), -6));
         }
     }
-}
 
+    /**
+     * Mengambil data anggota perpustakaan berdasarkan user_id (akun pengguna)
+     *
+     * @param int $userId ID pengguna di tabel users
+     * @return array|false Data anggota jika ditemukan, false jika belum terhubung
+     */
+    public function getByUserId(int $userId)
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM members WHERE user_id = :uid LIMIT 1");
+            $stmt->execute([':uid' => $userId]);
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Member::getByUserId Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Mengambil atau membuat secara otomatis data anggota untuk pengguna yang terdaftar
+     * Menghubungkan users dan members secara langsung dan mencegah pembuatan data member ganda
+     *
+     * @param int $userId ID pengguna
+     * @param string $name Nama lengkap pengguna
+     * @param string $email Email pengguna
+     * @return array Data anggota (existing atau yang baru dibuat)
+     */
+    public function getOrCreateForUser(int $userId, string $name, string $email): array
+    {
+        try {
+            // 1. Cek berdasarkan user_id terlebih dahulu
+            $member = $this->getByUserId($userId);
+            if (!empty($member['id'])) {
+                return $member;
+            }
+
+            // 2. Cek berdasarkan email jika belum terhubung via user_id
+            if (!empty($email)) {
+                $stmt = $this->db->prepare("SELECT * FROM members WHERE email = :email LIMIT 1");
+                $stmt->execute([':email' => trim($email)]);
+                $existing = $stmt->fetch();
+                if ($existing) {
+                    // Update user_id pada record member yang sudah ada
+                    $upd = $this->db->prepare("UPDATE members SET user_id = :uid WHERE id = :mid");
+                    $upd->execute([':uid' => $userId, ':mid' => $existing['id']]);
+                    $existing['user_id'] = $userId;
+                    return $existing;
+                }
+            }
+
+            // 3. Jika belum ada, buatkan data anggota baru
+            $code = $this->generateMemberCode();
+            $ins = $this->db->prepare("
+                INSERT INTO members (user_id, member_code, name, email) 
+                VALUES (:uid, :code, :name, :email)
+            ");
+            $ins->execute([
+                ':uid'   => $userId,
+                ':code'  => $code,
+                ':name'  => trim($name),
+                ':email' => !empty($email) ? trim($email) : null
+            ]);
+
+            $newId = (int) $this->db->lastInsertId();
+            return $this->getById($newId) ?: [
+                'id'          => $newId,
+                'user_id'     => $userId,
+                'member_code' => $code,
+                'name'        => $name,
+                'email'       => $email
+            ];
+        } catch (PDOException $e) {
+            error_log("Member::getOrCreateForUser Error: " . $e->getMessage());
+            return [];
+        }
+    }
+}

@@ -20,6 +20,14 @@ $csrfToken = $_SESSION['csrf_token'] ?? '';
                 <p class="brand-subtitle">Library Management System</p>
             </div>
 
+            <!-- Pesan Sukses (misal setelah registrasi) -->
+            <?php if (!empty($_SESSION['flash_success'])): ?>
+                <div class="alert-success" role="alert">
+                    <?= htmlspecialchars($_SESSION['flash_success'], ENT_QUOTES, 'UTF-8') ?>
+                </div>
+                <?php unset($_SESSION['flash_success']); ?>
+            <?php endif; ?>
+
             <!-- Tempat untuk menampilkan pesan error -->
             <?php if (!empty($error)): ?>
                 <div class="alert-error" role="alert">
@@ -32,15 +40,15 @@ $csrfToken = $_SESSION['csrf_token'] ?? '';
                 <!-- CSRF Token -->
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 
-                <!-- Input Email -->
+                <!-- Input Email atau Username -->
                 <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
+                    <label for="email" class="form-label">Email atau Username</label>
                     <input 
-                        type="email" 
+                        type="text" 
                         id="email" 
                         name="email" 
                         class="form-control" 
-                        placeholder="contoh@bookspace.com" 
+                        placeholder="Masukkan email atau username" 
                         value="<?= htmlspecialchars($old_email ?? '', ENT_QUOTES, 'UTF-8') ?>" 
                         required 
                         autofocus
@@ -63,6 +71,11 @@ $csrfToken = $_SESSION['csrf_token'] ?? '';
                 <!-- Tombol Login -->
                 <button type="submit" class="btn-submit">Login</button>
             </form>
+
+            <!-- Tautan ke Halaman Sign Up -->
+            <div class="auth-switch">
+                Belum punya akun? <a href="index.php?url=register">Sign Up</a>
+            </div>
 
             <div class="login-footer">
                 &copy; <?= date('Y') ?> BookSpace. All rights reserved.

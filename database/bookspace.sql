@@ -25,8 +25,10 @@ CREATE TABLE IF NOT EXISTS `categories` (
 CREATE TABLE IF NOT EXISTS `users` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
+    `username` VARCHAR(50) NULL UNIQUE,
     `email` VARCHAR(100) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
+    `role` ENUM('admin', 'user') NOT NULL DEFAULT 'user',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -56,12 +58,17 @@ CREATE TABLE IF NOT EXISTS `books` (
 -- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `members` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NULL,
     `member_code` VARCHAR(20) NOT NULL UNIQUE,
     `name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(100) NULL UNIQUE,
     `phone` VARCHAR(20) NULL,
     `address` TEXT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_members_user` FOREIGN KEY (`user_id`) 
+        REFERENCES `users` (`id`) 
+        ON UPDATE CASCADE 
+        ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
