@@ -376,5 +376,133 @@ class Loan
             return 0;
         }
     }
-}
 
+    /**
+     * Mengambil daftar peminjaman aktif yang sedang berjalan milik anggota tertentu
+     *
+     * @param int $memberId ID anggota di tabel members
+     * @return array
+     */
+    public function getActiveLoansByMember(int $memberId): array
+    {
+        try {
+            $sql = "SELECT l.*, 
+                           b.title AS book_title, 
+                           b.author AS book_author, 
+                           b.publisher, 
+                           b.publication_year, 
+                           b.isbn, 
+                           c.category_name
+                    FROM loans l
+                    JOIN books b ON l.book_id = b.id
+                    LEFT JOIN categories c ON b.category_id = c.id
+                    WHERE l.member_id = :member_id 
+                      AND l.status = 'borrowed'
+                    ORDER BY l.due_date ASC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':member_id' => $memberId]);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            error_log("Loan::getActiveLoansByMember Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Mengambil seluruh riwayat peminjaman buku (aktif maupun sudah dikembalikan) milik anggota
+     *
+     * @param int $memberId ID anggota
+     * @return array
+     */
+    public function getAllLoansByMember(int $memberId): array
+    {
+        try {
+            $sql = "SELECT l.*, 
+                           b.title AS book_title, 
+                           b.author AS book_author, 
+                           b.publisher, 
+                           b.publication_year, 
+                           b.isbn, 
+                           c.category_name
+                    FROM loans l
+                    JOIN books b ON l.book_id = b.id
+                    LEFT JOIN categories c ON b.category_id = c.id
+                    WHERE l.member_id = :member_id
+                    ORDER BY (l.status = 'borrowed') DESC, l.loan_date DESC, l.id DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':member_id' => $memberId]);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            error_log("Loan::getAllLoansByMember Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Menghitung jumlah buku yang sedang dipinjam secara aktif oleh anggota (status = 'borrowed')
+     *
+     * @param int $memberId
+     * @return int
+     */
+    public function getActiveLoansCountForMember(int $memberId): int
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM loans WHERE member_id = :member_id AND status = 'borrowed'");
+            $stmt->execute([':member_id' => $memberId]);
+            return (int) ($stmt->fetchColumn() ?: 0);
+        } catch (PDOException $e) {
+            error_log("Loan::getActiveLoansCountForMember Error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Memeriksa apakah anggota sedang memiliki peminjaman aktif untuk buku tertentu
+     * Mencegah peminjaman buku yang sama secara bersamaan (cegah duplikasi)
+     *
+     * @param int $memberId
+     * @param int $bookId
+     * @return bool
+     */
+    public function hasActiveLoan(int $memberId, int $bookId): bool
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) FROM loans 
+                WHERE member_id = :member_id 
+                  AND book_id = :book_id 
+                  AND status = 'borrowed'
+            ");
+            $stmt->execute([
+                ':member_id' => $memberId,
+                ':book_id'   => $bookId
+            ]);
+            return (int) $stmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            error_log("Loan::hasActiveLoan Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Mengambil daftar ID buku yang sedang aktif dipinjam oleh anggota
+     * Memudahkan pengecekan status tombol katalog secara efisien
+     *
+     * @param int $memberId
+     * @return array Daftar integer book_id
+     */
+    public function getActiveLoanBookIds(int $memberId): array
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT book_id FROM loans 
+                WHERE member_id = :member_id AND status = 'borrowed'
+            ");
+            $stmt->execute([':member_id' => $memberId]);
+            return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        } catch (PDOException $e) {
+            error_log("Loan::getActiveLoanBookIds Error: " . $e->getMessage());
+            return [];
+        }
+    }
+}

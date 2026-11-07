@@ -7,6 +7,7 @@ class Database
     private static string $username = 'root';
     private static string $password = '';
     private static string $charset = 'utf8mb4';
+    
     private static ?PDO $conn = null;
 
     /**

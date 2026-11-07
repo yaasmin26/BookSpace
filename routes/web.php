@@ -7,6 +7,9 @@ require_once __DIR__ . '/../app/controllers/CategoryController.php';
 require_once __DIR__ . '/../app/controllers/MemberController.php';
 require_once __DIR__ . '/../app/controllers/LoanController.php';
 require_once __DIR__ . '/../app/controllers/ReturnController.php';
+require_once __DIR__ . '/../app/controllers/UserDashboardController.php';
+require_once __DIR__ . '/../app/controllers/CatalogController.php';
+require_once __DIR__ . '/../app/controllers/UserLoanController.php';
 
 /**
  * Mengurai dan mendapatkan URI path yang diminta
@@ -14,6 +17,31 @@ require_once __DIR__ . '/../app/controllers/ReturnController.php';
  *
  * @return string
  */
+if (!function_exists('requireLogin')) {
+    function requireLogin(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
+            header('Location: index.php?url=login');
+            exit;
+        }
+    }
+}
+
+if (!function_exists('requireAdmin')) {
+    function requireAdmin(): void
+    {
+        requireLogin();
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $_SESSION['flash_error'] = 'Akses ditolak: Anda tidak memiliki izin untuk mengakses halaman atau fitur administrator.';
+            header('Location: index.php?url=user/dashboard');
+            exit;
+        }
+    }
+}
+
 if (!function_exists('resolveRequestUri')) {
     function resolveRequestUri(): string
     {
@@ -52,14 +80,103 @@ $requestMethod = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
 // Tabel Rute Aplikasi BookSpace
 switch ($requestUri) {
-    // Route: GET /
+        // Route: GET /
     case '/':
         if ($requestMethod === 'GET') {
             if (!empty($_SESSION['logged_in']) && !empty($_SESSION['user_id'])) {
-                header('Location: index.php?url=dashboard');
+                if (($_SESSION['role'] ?? '') === 'admin') {
+                    header('Location: index.php?url=dashboard');
+                } else {
+                    header('Location: index.php?url=user/dashboard');
+                }
                 exit;
             }
             (new AuthController())->login();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: GET /register & POST /register (Sign Up Pengguna Baru)
+    case '/register':
+        if ($requestMethod === 'GET') {
+            (new AuthController())->register();
+        } elseif ($requestMethod === 'POST') {
+            (new AuthController())->processRegister();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: GET /user/dashboard & /user-dashboard (Dashboard Pengguna Biasa)
+    case '/user/dashboard':
+    case '/user-dashboard':
+        if ($requestMethod === 'GET') {
+            requireLogin();
+            (new UserDashboardController())->index();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: GET /catalog & /katalog (Katalog Buku Pengguna)
+    case '/catalog':
+    case '/katalog':
+        if ($requestMethod === 'GET') {
+            requireLogin();
+            (new CatalogController())->index();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: GET /catalog/detail & /book/detail (Detail Buku Pengguna)
+    case '/catalog/detail':
+    case '/book/detail':
+        if ($requestMethod === 'GET') {
+            requireLogin();
+            (new CatalogController())->detail();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: POST /catalog/borrow & /loans/borrow & /borrow (Peminjaman Online Mandiri)
+    case '/catalog/borrow':
+    case '/loans/borrow':
+    case '/borrow':
+        if ($requestMethod === 'POST') {
+            requireLogin();
+            (new CatalogController())->borrow();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: GET /my-loans & /peminjaman-saya (Buku Sedang Dipinjam)
+    case '/my-loans':
+    case '/peminjaman-saya':
+        if ($requestMethod === 'GET') {
+            requireLogin();
+            (new UserLoanController())->myLoans();
+        } else {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        }
+        break;
+
+    // Route: GET /my-loans/history & /riwayat-peminjaman (Riwayat Peminjaman Lengkap)
+    case '/my-loans/history':
+    case '/riwayat-peminjaman':
+        if ($requestMethod === 'GET') {
+            requireLogin();
+            (new UserLoanController())->history();
         } else {
             http_response_code(405);
             echo "405 Method Not Allowed";
@@ -78,14 +195,10 @@ switch ($requestUri) {
         }
         break;
 
-    // Route: GET /dashboard (Dilindungi autentikasi session)
+        // Route: GET /dashboard (Khusus Admin Perpustakaan)
     case '/dashboard':
         if ($requestMethod === 'GET') {
-            // Validasi Autentikasi: Cegah akses tanpa login
-            if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-                header('Location: index.php?url=login');
-                exit;
-            }
+            requireAdmin();
             (new DashboardController())->index();
         } else {
             http_response_code(405);
@@ -108,14 +221,15 @@ switch ($requestUri) {
     // ==========================================
     // Rute CRUD Buku (Tanggung Jawab Anggota 2)
     // ==========================================
-    // Route: GET /books (Katalog Buku)
+    // Route: GET /books (Dukungan Admin CRUD & User Katalog)
     case '/books':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
         if ($requestMethod === 'GET') {
-            (new BookController())->index();
+            requireLogin();
+            if (($_SESSION['role'] ?? '') === 'admin') {
+                (new BookController())->index();
+            } else {
+                (new CatalogController())->index();
+            }
         } else {
             http_response_code(405);
             echo "405 Method Not Allowed";
@@ -124,10 +238,7 @@ switch ($requestUri) {
 
     // Route: GET /books/create (Form) & POST /books/create (Simpan Buku)
     case '/books/create':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new BookController())->create();
         } elseif ($requestMethod === 'POST') {
@@ -140,10 +251,7 @@ switch ($requestUri) {
 
     // Route: GET /books/edit (Form) & POST /books/edit (Update Buku)
     case '/books/edit':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new BookController())->edit();
         } elseif ($requestMethod === 'POST') {
@@ -156,10 +264,7 @@ switch ($requestUri) {
 
     // Route: POST /books/delete (Hapus Buku)
     case '/books/delete':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new BookController())->delete();
         } else {
@@ -170,10 +275,7 @@ switch ($requestUri) {
 
     // Dukungan alias: POST /books/store & POST /books/update
     case '/books/store':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new BookController())->store();
         } else {
@@ -183,10 +285,7 @@ switch ($requestUri) {
         break;
 
     case '/books/update':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new BookController())->update();
         } else {
@@ -200,10 +299,7 @@ switch ($requestUri) {
     // ==========================================
     // Route: GET /categories (Daftar Kategori)
     case '/categories':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new CategoryController())->index();
         } else {
@@ -214,10 +310,7 @@ switch ($requestUri) {
 
     // Route: GET /categories/create (Form) & POST /categories/create (Simpan Kategori)
     case '/categories/create':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new CategoryController())->create();
         } elseif ($requestMethod === 'POST') {
@@ -230,10 +323,7 @@ switch ($requestUri) {
 
     // Route: GET /categories/edit (Form) & POST /categories/edit (Update Kategori)
     case '/categories/edit':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new CategoryController())->edit();
         } elseif ($requestMethod === 'POST') {
@@ -246,10 +336,7 @@ switch ($requestUri) {
 
     // Route: POST /categories/delete (Hapus Kategori)
     case '/categories/delete':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new CategoryController())->delete();
         } else {
@@ -260,10 +347,7 @@ switch ($requestUri) {
 
     // Dukungan alias: POST /categories/store & POST /categories/update
     case '/categories/store':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new CategoryController())->store();
         } else {
@@ -273,10 +357,7 @@ switch ($requestUri) {
         break;
 
     case '/categories/update':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new CategoryController())->update();
         } else {
@@ -290,10 +371,7 @@ switch ($requestUri) {
     // ==========================================
     // Route: GET /members (Daftar Anggota)
     case '/members':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new MemberController())->index();
         } else {
@@ -304,10 +382,7 @@ switch ($requestUri) {
 
     // Route: GET /members/create (Form) & POST /members/create (Simpan Anggota)
     case '/members/create':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new MemberController())->create();
         } elseif ($requestMethod === 'POST') {
@@ -320,10 +395,7 @@ switch ($requestUri) {
 
     // Route: GET /members/edit (Form) & POST /members/edit (Update Anggota)
     case '/members/edit':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new MemberController())->edit();
         } elseif ($requestMethod === 'POST') {
@@ -336,10 +408,7 @@ switch ($requestUri) {
 
     // Route: POST /members/delete (Hapus Anggota)
     case '/members/delete':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new MemberController())->delete();
         } else {
@@ -350,10 +419,7 @@ switch ($requestUri) {
 
     // Dukungan alias: POST /members/store & POST /members/update
     case '/members/store':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new MemberController())->store();
         } else {
@@ -363,10 +429,7 @@ switch ($requestUri) {
         break;
 
     case '/members/update':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new MemberController())->update();
         } else {
@@ -380,10 +443,7 @@ switch ($requestUri) {
     // ===============================================
     // Route: GET /loans (Daftar Transaksi Peminjaman)
     case '/loans':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new LoanController())->index();
         } else {
@@ -394,10 +454,7 @@ switch ($requestUri) {
 
     // Route: GET /loans/create & POST /loans/create (Form & Simpan Peminjaman)
     case '/loans/create':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new LoanController())->create();
         } elseif ($requestMethod === 'POST') {
@@ -410,10 +467,7 @@ switch ($requestUri) {
 
     // Route: POST /loans/store (Simpan Peminjaman)
     case '/loans/store':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new LoanController())->store();
         } else {
@@ -424,10 +478,7 @@ switch ($requestUri) {
 
     // Route: GET /loans/detail (Detail Transaksi)
     case '/loans/detail':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new LoanController())->detail();
         } else {
@@ -438,10 +489,7 @@ switch ($requestUri) {
 
     // Route: POST /loans/return (Proses Pengembalian Buku)
     case '/loans/return':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new LoanController())->returnBook();
         } else {
@@ -455,10 +503,7 @@ switch ($requestUri) {
     // ===============================================
     // Route: GET /returns & POST /returns
     case '/returns':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'GET') {
             (new ReturnController())->index();
         } elseif ($requestMethod === 'POST') {
@@ -471,10 +516,7 @@ switch ($requestUri) {
 
     // Route: POST /returns/process
     case '/returns/process':
-        if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
-            header('Location: index.php?url=login');
-            exit;
-        }
+        requireAdmin();
         if ($requestMethod === 'POST') {
             (new ReturnController())->process();
         } else {
