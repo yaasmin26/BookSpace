@@ -157,7 +157,10 @@ $isStockAvailable = (int)$book['available_stock'] > 0;
                                         type="button" 
                                         class="btn btn-primary"
                                         style="background: var(--gold-accent); color: var(--navy); border: none; padding: 0.75rem 1.75rem; font-size: 0.925rem; font-weight: 800; cursor: pointer; box-shadow: var(--shadow-gold);"
-                                        onclick="openBorrowModal(<?= (int)$book['id'] ?>, '<?= htmlspecialchars(addslashes($book['title']), ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars(addslashes($book['author']), ENT_QUOTES, 'UTF-8') ?>')"
+                                        data-id="<?= (int)$book['id'] ?>"
+                                        data-title="<?= htmlspecialchars($book['title'], ENT_QUOTES, 'UTF-8') ?>"
+                                        data-author="<?= htmlspecialchars($book['author'] ?? '-', ENT_QUOTES, 'UTF-8') ?>"
+                                        onclick="openBorrowModal(this.dataset.id, this.dataset.title, this.dataset.author)"
                                     >
                                         <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>

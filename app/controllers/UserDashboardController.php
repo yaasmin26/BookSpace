@@ -17,6 +17,9 @@ class UserDashboardController
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             session_start();
         }
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
         $this->db          = Database::getConnection();
         $this->memberModel = new Member();
         $this->loanModel   = new Loan();

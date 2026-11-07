@@ -360,7 +360,10 @@ $userName   = $_SESSION['nama_lengkap'] ?? $_SESSION['name'] ?? 'Anggota';
                                                     type="button" 
                                                     class="btn btn-sm" 
                                                     style="flex: 1; background: var(--gold-accent); color: var(--navy); border: none; font-weight: 800; cursor: pointer;"
-                                                    onclick="openBorrowModal(<?= (int)$book['id'] ?>, '<?= htmlspecialchars(addslashes($book['title']), ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars(addslashes($book['author']), ENT_QUOTES, 'UTF-8') ?>')"
+                                                    data-id="<?= (int)$book['id'] ?>"
+                                                    data-title="<?= htmlspecialchars($book['title'], ENT_QUOTES, 'UTF-8') ?>"
+                                                    data-author="<?= htmlspecialchars($book['author'] ?? '-', ENT_QUOTES, 'UTF-8') ?>"
+                                                    onclick="openBorrowModal(this.dataset.id, this.dataset.title, this.dataset.author)"
                                                 >
                                                     Pinjam
                                                 </button>

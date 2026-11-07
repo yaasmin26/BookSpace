@@ -4,6 +4,13 @@
  * BookSpace - Modular User Footer & Borrow Modal Component
  * ========================================================
  */
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    session_start();
+}
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
 ?>
     <!-- Modal Konfirmasi Peminjaman Online -->
     <div id="borrowModal" class="modal-backdrop" style="display: none;">
@@ -23,7 +30,7 @@
             </div>
 
             <form action="index.php?url=catalog/borrow" method="POST" id="borrowForm">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="book_id" id="modalBookId" value="">
 
                 <div class="modal-body">
@@ -68,19 +75,27 @@
     <!-- Script Pengendali Modal -->
     <script>
         function openBorrowModal(bookId, bookTitle, bookAuthor) {
-            document.getElementById('modalBookId').value = bookId;
-            document.getElementById('modalBookTitle').textContent = bookTitle || 'Buku Perpustakaan';
-            document.getElementById('modalBookAuthor').textContent = bookAuthor || '-';
-            
+            const inputId = document.getElementById('modalBookId');
+            const titleEl = document.getElementById('modalBookTitle');
+            const authorEl = document.getElementById('modalBookAuthor');
             const modal = document.getElementById('borrowModal');
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+
+            if (inputId) inputId.value = bookId || '';
+            if (titleEl) titleEl.textContent = bookTitle || 'Buku Perpustakaan';
+            if (authorEl) authorEl.textContent = bookAuthor || '-';
+            
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
         }
 
         function closeBorrowModal() {
             const modal = document.getElementById('borrowModal');
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
         }
 
         window.addEventListener('click', function(event) {
